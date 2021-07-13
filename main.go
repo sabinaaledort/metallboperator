@@ -96,9 +96,9 @@ func main() {
 	}
 
 	if err = (&controllers.MetallbReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("Metallb"),
-		Scheme: mgr.GetScheme(),
+		Client:       mgr.GetClient(),
+		Log:          ctrl.Log.WithName("controllers").WithName("Metallb"),
+		Scheme:       mgr.GetScheme(),
 		PlatformInfo: platformInfo,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Metallb")
