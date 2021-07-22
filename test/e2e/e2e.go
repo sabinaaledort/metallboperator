@@ -100,7 +100,7 @@ var _ = Describe("validation", func() {
 			}, timeout, interval).Should(BeTrue())
 
 			pods, err := testclient.Client.Pods(OperatorNameSpace).List(context.Background(), metav1.ListOptions{
-				LabelSelector: fmt.Sprintf("control-plane=%s", consts.MetalLBOperatorDeploymentLabel)})
+				LabelSelector: fmt.Sprintf("control-plane1=%s", consts.MetalLBOperatorDeploymentLabel)})
 			Expect(err).ToNot(HaveOccurred())
 
 			deploy, err := testclient.Client.Deployments(OperatorNameSpace).Get(context.Background(), consts.MetalLBOperatorDeploymentName, metav1.GetOptions{})
@@ -455,7 +455,7 @@ var _ = Describe("validation", func() {
 						Namespace: OperatorNameSpace,
 					},
 					Spec: metallbv1alpha1.AddressPoolSpec{
-						Protocol: "layer2",
+						Protocol: "layer21",
 						Addresses: []string{
 							"1.1.1.1",
 							"1.1.1.100",
