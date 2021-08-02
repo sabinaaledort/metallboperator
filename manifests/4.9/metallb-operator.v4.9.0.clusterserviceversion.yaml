@@ -67,6 +67,8 @@ metadata:
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
     repository: https://github.com/metallb/metallb-operator
     support: Community
+  labels:
+    operatorframework.io/arch.amd64: supported
   name: metallb-operator.v4.9.0
   namespace: placeholder
 spec:
