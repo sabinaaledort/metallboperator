@@ -61,7 +61,7 @@ metadata:
     certified: "false"
     containerImage: quay.io/openshift/origin-metallb-operator:4.9
     createdAt: "2021-06-28 00:00:00"
-    olm.skipRange: ">=4.8.0-0 < 4.9.0-0"
+    olm.skipRange: ">=4.8.0 <4.9.0"
     description: An operator for deploying MetalLB on a kubernetes cluster.
     operators.operatorframework.io/builder: operator-sdk-v1.8.0+git
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
