@@ -2,6 +2,8 @@ package controllers
 
 import (
 	"context"
+	"time"
+
 	"github.com/metallb/metallb-operator/api/v1alpha1"
 	"github.com/metallb/metallb-operator/test/consts"
 	. "github.com/onsi/ginkgo"
@@ -10,7 +12,6 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"time"
 )
 
 var _ = Describe("AddressPool Controller", func() {
@@ -24,8 +25,7 @@ var _ = Describe("AddressPool Controller", func() {
 			Spec: v1alpha1.AddressPoolSpec{
 				Protocol: "layer2",
 				Addresses: []string{
-					"1.1.1.1",
-					"1.1.1.100",
+					"1.1.1.1-1.1.1.100",
 				},
 				AutoAssign: &autoAssign,
 			},
@@ -62,8 +62,7 @@ var _ = Describe("AddressPool Controller", func() {
   auto-assign: false
   addresses:
 
-  - 1.1.1.1
-  - 1.1.1.100
+  - 1.1.1.1-1.1.1.100
 
 `))
 		})

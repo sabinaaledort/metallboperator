@@ -300,8 +300,7 @@ var _ = Describe("validation", func() {
 				Spec: metallbv1alpha1.AddressPoolSpec{
 					Protocol: "layer2",
 					Addresses: []string{
-						"1.1.1.1",
-						"1.1.1.100",
+						"1.1.1.1-1.1.1.100",
 					},
 				},
 			}, `address-pools:
@@ -309,8 +308,7 @@ var _ = Describe("validation", func() {
   protocol: layer2
   addresses:
 
-  - 1.1.1.1
-  - 1.1.1.100
+  - 1.1.1.1-1.1.1.100
 
 `),
 			table.Entry("Test AddressPool object with auto assign set to false", "addresspool2", &metallbv1alpha1.AddressPool{
@@ -321,8 +319,7 @@ var _ = Describe("validation", func() {
 				Spec: metallbv1alpha1.AddressPoolSpec{
 					Protocol: "layer2",
 					Addresses: []string{
-						"2.2.2.1",
-						"2.2.2.100",
+						"2.2.2.1-2.2.2.100",
 					},
 					AutoAssign: &autoAssign,
 				},
@@ -332,8 +329,7 @@ var _ = Describe("validation", func() {
   auto-assign: false
   addresses:
 
-  - 2.2.2.1
-  - 2.2.2.100
+  - 2.2.2.1-2.2.2.100
 
 `))
 	})
@@ -457,8 +453,7 @@ var _ = Describe("validation", func() {
 					Spec: metallbv1alpha1.AddressPoolSpec{
 						Protocol: "layer2",
 						Addresses: []string{
-							"1.1.1.1",
-							"1.1.1.100",
+							"1.1.1.1-1.1.1.100",
 						},
 					},
 				}
@@ -489,8 +484,7 @@ var _ = Describe("validation", func() {
   protocol: layer2
   addresses:
 
-  - 1.1.1.1
-  - 1.1.1.100
+  - 1.1.1.1-1.1.1.100
 
 `))
 
@@ -505,8 +499,7 @@ var _ = Describe("validation", func() {
 					Spec: metallbv1alpha1.AddressPoolSpec{
 						Protocol: "layer2",
 						Addresses: []string{
-							"2.2.2.1",
-							"2.2.2.100",
+							"2.2.2.1-2.2.2.100",
 						},
 						AutoAssign: &autoAssign,
 					},
@@ -538,16 +531,14 @@ var _ = Describe("validation", func() {
   protocol: layer2
   addresses:
 
-  - 1.1.1.1
-  - 1.1.1.100
+  - 1.1.1.1-1.1.1.100
 
 - name: addresspool2
   protocol: layer2
   auto-assign: false
   addresses:
 
-  - 2.2.2.1
-  - 2.2.2.100
+  - 2.2.2.1-2.2.2.100
 
 `))
 			})
@@ -561,8 +552,7 @@ var _ = Describe("validation", func() {
 					Spec: metallbv1alpha1.AddressPoolSpec{
 						Protocol: "layer2",
 						Addresses: []string{
-							"1.1.1.1",
-							"1.1.1.100",
+							"1.1.1.1-1.1.1.100",
 						},
 					},
 				}
@@ -588,8 +578,7 @@ var _ = Describe("validation", func() {
   auto-assign: false
   addresses:
 
-  - 2.2.2.1
-  - 2.2.2.100
+  - 2.2.2.1-2.2.2.100
 
 `))
 
@@ -604,8 +593,7 @@ var _ = Describe("validation", func() {
 					Spec: metallbv1alpha1.AddressPoolSpec{
 						Protocol: "layer2",
 						Addresses: []string{
-							"2.2.2.1",
-							"2.2.2.100",
+							"2.2.2.1-2.2.2.100",
 						},
 					},
 				}
@@ -650,8 +638,7 @@ var _ = Describe("validation", func() {
 					Spec: metallbv1alpha1.AddressPoolSpec{
 						Protocol: "layer2",
 						Addresses: []string{
-							"1.1.1.1",
-							"1.1.1.100",
+							"1.1.1.1-1.1.1.100",
 						},
 					},
 				}
@@ -682,8 +669,7 @@ var _ = Describe("validation", func() {
   protocol: layer2
   addresses:
 
-  - 1.1.1.1
-  - 1.1.1.100
+  - 1.1.1.1-1.1.1.100
 
 `))
 
@@ -703,8 +689,7 @@ var _ = Describe("validation", func() {
 				addresspool.Spec = metallbv1alpha1.AddressPoolSpec{
 					Protocol: "layer2",
 					Addresses: []string{
-						"1.1.1.1",
-						"1.1.1.200",
+						"1.1.1.1-1.1.1.200",
 					},
 					AutoAssign: &autoAssign,
 				}
@@ -728,8 +713,7 @@ var _ = Describe("validation", func() {
   auto-assign: false
   addresses:
 
-  - 1.1.1.1
-  - 1.1.1.200
+  - 1.1.1.1-1.1.1.200
 
 `))
 			})
@@ -743,8 +727,7 @@ var _ = Describe("validation", func() {
 					Spec: metallbv1alpha1.AddressPoolSpec{
 						Protocol: "layer2",
 						Addresses: []string{
-							"1.1.1.1",
-							"1.1.1.200",
+							"1.1.1.1-1.1.1.200",
 						},
 					},
 				}
