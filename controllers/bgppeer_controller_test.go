@@ -2,6 +2,8 @@ package controllers
 
 import (
 	"context"
+	"time"
+
 	"github.com/metallb/metallb-operator/api/v1alpha1"
 	"github.com/metallb/metallb-operator/pkg/apply"
 	. "github.com/onsi/ginkgo"
@@ -10,7 +12,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"time"
 )
 
 var _ = Describe("Peer Controller", func() {
@@ -172,8 +173,7 @@ var _ = Describe("Peer Controller", func() {
 				Spec: v1alpha1.AddressPoolSpec{
 					Protocol: "bgp",
 					Addresses: []string{
-						"1.1.1.1",
-						"1.1.1.100",
+						"1.1.1.1-1.1.1.100",
 					},
 					AutoAssign: &autoAssign,
 					BGPAdvertisements: []v1alpha1.BgpAdvertisement{
@@ -196,8 +196,7 @@ var _ = Describe("Peer Controller", func() {
 				Spec: v1alpha1.AddressPoolSpec{
 					Protocol: "bgp",
 					Addresses: []string{
-						"2.2.2.2",
-						"2.2.2.100",
+						"2.2.2.2-2.2.2.100",
 					},
 					AutoAssign: &autoAssign,
 				},
@@ -242,8 +241,7 @@ var _ = Describe("Peer Controller", func() {
 - name: test-addresspool1
   protocol: bgp
   addresses:
-  - 1.1.1.1
-  - 1.1.1.100
+  - 1.1.1.1-1.1.1.100
   auto-assign: false
   bgp-advertisements: 
   - communities: 
@@ -268,8 +266,7 @@ var _ = Describe("Peer Controller", func() {
 - name: test-addresspool1
   protocol: bgp
   addresses:
-  - 1.1.1.1
-  - 1.1.1.100
+  - 1.1.1.1-1.1.1.100
   auto-assign: false
   bgp-advertisements: 
   - communities: 
@@ -298,8 +295,7 @@ peers:
 - name: test-addresspool1
   protocol: bgp
   addresses:
-  - 1.1.1.1
-  - 1.1.1.100
+  - 1.1.1.1-1.1.1.100
   auto-assign: false
   bgp-advertisements: 
   - communities: 
@@ -310,8 +306,7 @@ peers:
 - name: test-addresspool2
   protocol: bgp
   addresses:
-  - 2.2.2.2
-  - 2.2.2.100
+  - 2.2.2.2-2.2.2.100
   auto-assign: false
 peers:
 - my-asn: 64500
@@ -334,8 +329,7 @@ peers:
 - name: test-addresspool1
   protocol: bgp
   addresses:
-  - 1.1.1.1
-  - 1.1.1.100
+  - 1.1.1.1-1.1.1.100
   auto-assign: false
   bgp-advertisements: 
   - communities: 
@@ -346,8 +340,7 @@ peers:
 - name: test-addresspool2
   protocol: bgp
   addresses:
-  - 2.2.2.2
-  - 2.2.2.100
+  - 2.2.2.2-2.2.2.100
   auto-assign: false
 peers:
 - my-asn: 64500
@@ -375,8 +368,7 @@ peers:
 - name: test-addresspool1
   protocol: bgp
   addresses:
-  - 1.1.1.1
-  - 1.1.1.100
+  - 1.1.1.1-1.1.1.100
   auto-assign: false
   bgp-advertisements: 
   - communities: 
@@ -387,8 +379,7 @@ peers:
 - name: test-addresspool2
   protocol: bgp
   addresses:
-  - 2.2.2.2
-  - 2.2.2.100
+  - 2.2.2.2-2.2.2.100
   auto-assign: false
 peers:
 - my-asn: 64000
@@ -411,8 +402,7 @@ peers:
 - name: test-addresspool2
   protocol: bgp
   addresses:
-  - 2.2.2.2
-  - 2.2.2.100
+  - 2.2.2.2-2.2.2.100
   auto-assign: false
 peers:
 - my-asn: 64000
@@ -439,8 +429,7 @@ peers:
 - name: test-addresspool2
   protocol: bgp
   addresses:
-  - 2.2.2.2
-  - 2.2.2.100
+  - 2.2.2.2-2.2.2.100
   auto-assign: false
 `))
 			By("Deleting 2nd AddressPool resource")
