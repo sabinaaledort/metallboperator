@@ -17,4 +17,6 @@ const (
 	MetalLBAddressPoolCRDName = "addresspools.metallb.io"
 	// MetalLBConfigMapName contains created configmap
 	MetalLBConfigMapName = "config"
+	// AddressPoolValidationWebhookName contains the name of the AddressPool validation webhook
+	AddressPoolValidationWebhookName = "addresspoolvalidationwebhook.metallb.io"
 )
