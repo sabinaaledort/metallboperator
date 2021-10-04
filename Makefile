@@ -41,6 +41,7 @@ GOBIN=$(shell go env GOBIN)
 endif
 
 OPERATOR_SDK_VERSION=v1.8.1
+OLM_VERSION=v0.18.3
 
 OPM_TOOL_URL=https://api.github.com/repos/operator-framework/operator-registry/releases
 
@@ -117,7 +118,7 @@ build-bundle: ## Build the bundle image.
 	docker build -f bundle.Dockerfile -t $(BUNDLE_IMG) .
 
 deploy-olm: operator-sdk ## deploys OLM on the cluster
-	operator-sdk olm install
+	operator-sdk olm install --version $(OLM_VERSION)
 	operator-sdk olm status
 
 deploy-with-olm: ## deploys the operator with OLM instead of manifests
