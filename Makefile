@@ -43,6 +43,8 @@ CERT_MANAGER_URL=https://github.com/jetstack/cert-manager/releases
 
 TESTS_REPORTS_PATH ?= /tmp/test_e2e_logs/
 
+ENABLE_OPERATOR_WEBHOOK ?= true
+
 ENVTEST_ASSETS_DIR=$(shell pwd)/testbin
 test: generate fmt vet manifests ## Run unit and integration tests
 	mkdir -p ${ENVTEST_ASSETS_DIR}
@@ -69,7 +71,7 @@ uninstall: manifests kustomize  ## Uninstall CRDs from a cluster
 	$(KUSTOMIZE) build config/crd | kubectl delete -f -
 
 configure-operator-webhook:
-	KUSTOMIZE=$(KUSTOMIZE) hack/configure_operator_webhook.sh
+	ENABLE_OPERATOR_WEBHOOK=$(ENABLE_OPERATOR_WEBHOOK) hack/configure_operator_webhook.sh
 
 deploy-cert-manager:
 	set -e ;\
@@ -77,11 +79,7 @@ deploy-cert-manager:
 	kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/$$cert_manager_latest_version/cert-manager.yaml ;\
 	hack/wait_for_cert_manager.sh ;\
 
-deploy: export ENABLE_OPERATOR_WEBHOOK?=false
 deploy: manifests kustomize configure-operator-webhook ## Deploy controller in the configured cluster
-ifeq ($(ENABLE_OPERATOR_WEBHOOK), true)
-	$(MAKE) deploy-cert-manager
-endif
 	cd config/manager && kustomize edit set image controller=${IMG}
 	$(KUSTOMIZE) build $(KUSTOMIZE_DEPLOY_DIR) | kubectl apply -f -
 	$(KUSTOMIZE) build config/metallb_rbac | kubectl apply -f -
@@ -106,7 +104,6 @@ docker-build:  ## Build the docker image
 docker-push:  ## Push the docker image
 	docker push ${IMG}
 
-bundle: export ENABLE_OPERATOR_WEBHOOK?=true
 bundle: operator-sdk manifests configure-operator-webhook ## Generate bundle manifests and metadata, then validate generated files.
 	$(OPERATOR_SDK) generate kustomize manifests --interactive=false -q
 	cd config/manager && $(KUSTOMIZE) edit set image controller=$(IMG)
