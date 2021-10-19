@@ -80,6 +80,7 @@ func RunE2ETests(t *testing.T) {
 }
 
 var _ = Describe("validation", func() {
+	time.Sleep(5 * time.Hour)
 	Context("Platform Check", func() {
 		It("should be either Kubernetes or OpenShift platform", func() {
 			cfg := ctrl.GetConfigOrDie()
