@@ -6,8 +6,8 @@ spec:
   - name: metallb-rhel8-operator
     from:
       kind: DockerImage
-      name: quay.io/openshift/origin-metallb-operator:4.9
+      name: quay.io/openshift/origin-metallb-operator:4.10
   - name: metallb-rhel8
     from:
       kind: DockerImage
-      name: quay.io/openshift/origin-metallb:4.9
+      name: quay.io/openshift/origin-metallb:4.10
