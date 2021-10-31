@@ -101,8 +101,10 @@ deploy: manifests kustomize configure-operator-webhook ## Deploy controller in t
 manifests: controller-gen generate-metallb-manifests  ## Generate manifests e.g. CRD, RBAC etc.
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 
-fmt:  ## Run go fmt against code
-	[ -z "`gofmt -s -w -l -e .`" ]
+fmt: ## Go fmt your code
+	hack/gofmt.sh
+
+fmt-code: ## Run go fmt against code.
 	go fmt ./...
 
 vet:  ## Run go vet against code
