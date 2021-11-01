@@ -11,12 +11,7 @@ METALLB_SC_FILE=$(dirname "$0")/securityContext.yaml
 if ! command -v yq &> /dev/null
 then
     echo "yq binary not found, installing... "
-    yq_tmp_dir=$(mktemp -d)
-    cd $yq_tmp_dir
-    go mod init tmp
-    GO111MODULE=on go get github.com/mikefarah/yq/v4
-    rm -rf $yq_tmp_dir
-    cd -
+    go install -mod='' github.com/mikefarah/yq/v4@v4.13.3
 fi
 
 curl ${METALLB_MANIFESTS_URL} -o _cache/${METALLB_MANIFESTS_FILE}
