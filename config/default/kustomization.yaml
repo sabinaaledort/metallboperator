@@ -12,7 +12,6 @@ namePrefix: metallb-operator-
 #commonLabels:
 #  someName: someValue
 
-# the following config is for teaching kustomize how to do var substitution
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:

@@ -3,9 +3,14 @@ package apply
 import (
 	metallbv1alpha "github.com/metallb/metallb-operator/api/v1alpha1"
 	"github.com/pkg/errors"
-	"gopkg.in/yaml.v2"
 	uns "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
+
+// ConfigMap structure
+type ConfigMapData struct {
+	AddressPools []metallbv1alpha.AddressPoolSpec `yaml:"address-pools,omitempty"`
+	Peers        []metallbv1alpha.BGPPeerSpec     `yaml:"peers,omitempty"`
+}
 
 // MergeMetadataForUpdate merges the read-only fields of metadata.
 // This is to be able to do a a meaningful comparison in apply,
@@ -26,7 +31,7 @@ func mergeMetadataForUpdate(current, updated *uns.Unstructured) error {
 }
 
 const (
-	AddressPoolConfigMap = "config"
+	MetalLBConfigMap = "config"
 )
 
 // MergeObjectForUpdate prepares a "desired" object to be updated.
@@ -42,10 +47,6 @@ func MergeObjectForUpdate(current, updated *uns.Unstructured) error {
 	}
 
 	if err := mergeServiceAccountForUpdate(current, updated); err != nil {
-		return err
-	}
-
-	if err := mergeConfigMapForUpdate(current, updated); err != nil {
 		return err
 	}
 
@@ -207,59 +208,6 @@ func mergeLabels(current, updated *uns.Unstructured) {
 	if len(curLabels) != 0 {
 		updated.SetLabels(curLabels)
 	}
-}
-
-func mergeConfigMapForUpdate(current, updated *uns.Unstructured) error {
-	type configMapData struct {
-		AddressPools []metallbv1alpha.AddressPoolSpec `yaml:"address-pools"`
-	}
-
-	if gvk := updated.GroupVersionKind(); gvk.Kind != "ConfigMap" || gvk.Group != "" {
-		return nil
-	}
-
-	s1, ok, err := uns.NestedString(current.Object, "data", AddressPoolConfigMap)
-	if !ok || err != nil {
-		return err
-	}
-
-	s2, ok, err := uns.NestedString(updated.Object, "data", AddressPoolConfigMap)
-	if !ok || err != nil {
-		return err
-	}
-
-	st1, st2 := configMapData{}, configMapData{}
-
-	if err := yaml.Unmarshal([]byte(s1), &st1); err != nil {
-		return err
-	}
-
-	if err := yaml.Unmarshal([]byte(s2), &st2); err != nil {
-		return err
-	}
-
-	var mergedConfigMap configMapData
-
-	for i, a1 := range st1.AddressPools {
-		for j := len(st2.AddressPools) - 1; j >= 0; j-- {
-			if st2.AddressPools[j].Name == a1.Name {
-				st1.AddressPools[i] = *st2.AddressPools[j].DeepCopy()
-				st2.AddressPools = append(st2.AddressPools[:j], st2.AddressPools[j+1:]...)
-			}
-		}
-	}
-
-	mergedConfigMap.AddressPools = append(st1.AddressPools, st2.AddressPools...)
-
-	resData, err := yaml.Marshal(mergedConfigMap)
-	if err != nil {
-		return err
-	}
-
-	data := make(map[string]string)
-	data[AddressPoolConfigMap] = string(resData)
-	err = uns.SetNestedStringMap(updated.Object, data, "data")
-	return err
 }
 
 // IsObjectSupported rejects objects with configurations we don't support.

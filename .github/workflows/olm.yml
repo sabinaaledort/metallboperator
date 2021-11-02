@@ -4,7 +4,10 @@ on:
   push:
     branches: [ main ]
   pull_request:
-    branches: [ main ]
+    branches:
+      - main
+      - "v[0-9]+.[0-9]+.[0-9]+"
+      - "v[0-9]+.[0-9]+"
 
 defaults:
   run:
@@ -38,14 +41,14 @@ jobs:
         make fmt
         git diff --exit-code
   
-    - name: Verify bundle manifests
+    - name: Verify release bundle manifests
       run: |
-        make bundle
+        make bundle-release
         git diff --exit-code
 
     - name: Create and set up K8s Kind Cluster
       run: |
-        ./scripts/kind-cluster-with-registry.sh
+        ./hack/kind-cluster-with-registry.sh
         make deploy-olm
 
     - name: Build bundle image
@@ -58,10 +61,12 @@ jobs:
 
     - name: E2E Tests
       run: |
-        export KUBECONFIG=${HOME}/.kube/config 
+        export KUBECONFIG=${HOME}/.kube/config
+        make test-validation
         make test-e2e
 
     - name: Archive E2E Tests logs
+      if: ${{ failure() }}
       uses: actions/upload-artifact@v2
       with:
         name: test_e2e_logs

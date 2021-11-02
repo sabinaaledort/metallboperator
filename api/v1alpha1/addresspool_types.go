@@ -20,11 +20,21 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+type BgpAdvertisement struct {
+	// The aggregation-length advertisement option lets you “roll up” the /32s into a larger prefix.
+	// +kubebuilder:validation:Minimum=1
+	AggregationLength int `json:"aggregationLength,omitempty" yaml:"aggregation-length,omitempty"`
+
+	// BGP LOCAL_PREF attribute which is used by BGP best path algorithm,
+	// Path with higher localpref is preferred over one with lower localpref.
+	LocalPref uint32 `json:"localPref,omitempty" yaml:"localpref,omitempty"`
+
+	// BGP communities
+	Communities []string `json:"communities,omitempty" yaml:"communities,omitempty"`
+}
+
 // AddressPoolSpec defines the desired state of AddressPool
 type AddressPoolSpec struct {
-	// Address Pool Name
-	Name string `json:"name,omitempty"`
-
 	// Protocol can be used to select how the announcement is done,
 	// +kubebuilder:validation:Enum:=layer2; bgp
 	Protocol string `json:"protocol"`
@@ -40,6 +50,11 @@ type AddressPoolSpec struct {
 	// +optional
 	// +kubebuilder:default:=true
 	AutoAssign *bool `json:"autoAssign,omitempty" yaml:"auto-assign,omitempty"`
+
+	// When an IP is allocated from this pool, how should it be
+	// translated into BGP announcements?
+	// +optional
+	BGPAdvertisements []BgpAdvertisement `json:"bgpAdvertisements,omitempty" yaml:"bgp-advertisements,omitempty"`
 }
 
 // AddressPoolStatus defines the observed state of AddressPool

@@ -48,6 +48,67 @@ metadata:
           }
         },
         {
+          "apiVersion": "metallb.io/v1alpha1",
+          "kind": "AddressPool",
+          "metadata": {
+            "name": "addresspool-sample4",
+            "namespace": "metallb-system"
+          },
+          "spec": {
+            "addresses": [
+              "172.30.0.100-172.30.0.255"
+            ],
+            "bgpAdvertisements": [
+              {
+                "aggregationLength": 32,
+                "communities": [
+                  "65535:65282"
+                ],
+                "localPref": 100
+              },
+              {
+                "aggregationLength": 24,
+                "communities": [
+                  "8000:800"
+                ]
+              }
+            ],
+            "protocol": "bgp"
+          }
+        },
+        {
+          "apiVersion": "metallb.io/v1alpha1",
+          "kind": "BGPPeer",
+          "metadata": {
+            "name": "peer-sample1",
+            "namespace": "metallb-system"
+          },
+          "spec": {
+            "holdTime": 10,
+            "myASN": 64500,
+            "nodeSelectors": [
+              {
+                "matchExpressions": [
+                  {
+                    "key": "kubernetes.io/hostname",
+                    "operator": "In",
+                    "values": [
+                      "hostA",
+                      "hostB"
+                    ]
+                  }
+                ]
+              }
+            ],
+            "password": "test",
+            "peerASN": 64501,
+            "peerAddress": "10.0.0.1",
+            "peerPort": 1,
+            "routerID": "10.10.10.10",
+            "sourceAddress": "1.1.1.1"
+          }
+        },
+        {
           "apiVersion": "metallb.io/v1beta1",
           "kind": "MetalLB",
           "metadata": {
@@ -79,6 +140,9 @@ spec:
       displayName: Address Pool
       kind: AddressPool
       name: addresspools.metallb.io
+      version: v1alpha1
+    - kind: BGPPeer
+      name: bgppeers.metallb.io
       version: v1alpha1
     - description: MetalLB is the Schema for the metallbs API
       displayName: MetalLB
@@ -147,6 +211,26 @@ spec:
           - update
         - apiGroups:
           - metallb.io
+          resources:
+            - bgppeers
+          verbs:
+            - create
+            - delete
+            - get
+            - list
+            - patch
+            - update
+            - watch
+        - apiGroups:
+            - metallb.io
+          resources:
+            - bgppeers/status
+          verbs:
+            - get
+            - patch
+            - update
+        - apiGroups:
+            - metallb.io
           resources:
           - metallbs
           verbs:
@@ -245,17 +329,32 @@ spec:
                   value: quay.io/openshift/origin-metallb:4.10
                 - name: CONTROLLER_IMAGE
                   value: quay.io/openshift/origin-metallb:4.10
+                - name: ENABLE_OPERATOR_WEBHOOK
+                  value: "true"
                 - name: WATCH_NAMESPACE
                   valueFrom:
                     fieldRef:
                       fieldPath: metadata.annotations['olm.targetNamespaces']
                 image: quay.io/openshift/origin-metallb-operator:4.10
                 name: manager
+                ports:
+                  - containerPort: 9443
+                    name: webhook-server
+                    protocol: TCP
                 resources:
                   requests:
                     cpu: 50m
                     memory: 20Mi
+                volumeMounts:
+                  - mountPath: /tmp/k8s-webhook-server/serving-certs
+                    name: cert
+                    readOnly: true
               terminationGracePeriodSeconds: 10
+              volumes:
+                - name: cert
+                  secret:
+                    defaultMode: 420
+                    secretName: webhook-server-cert
       permissions:
       - rules:
         - apiGroups:
@@ -384,3 +483,44 @@ spec:
   provider:
     name: Community
   version: 4.10.0
+  webhookdefinitions:
+    - admissionReviewVersions:
+        - v1
+      containerPort: 443
+      deploymentName: metallb-operator-controller-manager
+      failurePolicy: Fail
+      generateName: addresspoolvalidationwebhook.metallb.io
+      rules:
+        - apiGroups:
+            - metallb.io
+          apiVersions:
+            - v1alpha1
+          operations:
+            - CREATE
+            - UPDATE
+          resources:
+            - addresspools
+      sideEffects: None
+      targetPort: 9443
+      type: ValidatingAdmissionWebhook
+      webhookPath: /validate-metallb-io-v1alpha1-addresspool
+    - admissionReviewVersions:
+        - v1
+      containerPort: 443
+      deploymentName: metallb-operator-controller-manager
+      failurePolicy: Fail
+      generateName: bgppeervalidationwebhook.metallb.io
+      rules:
+        - apiGroups:
+            - metallb.io
+          apiVersions:
+            - v1alpha1
+          operations:
+            - CREATE
+            - UPDATE
+          resources:
+            - bgppeers
+      sideEffects: None
+      targetPort: 9443
+      type: ValidatingAdmissionWebhook
+      webhookPath: /validate-metallb-io-v1alpha1-bgppeer

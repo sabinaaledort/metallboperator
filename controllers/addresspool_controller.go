@@ -18,20 +18,16 @@ package controllers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/go-logr/logr"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	metallbv1alpha1 "github.com/metallb/metallb-operator/api/v1alpha1"
-	"github.com/metallb/metallb-operator/pkg/apply"
 	"github.com/metallb/metallb-operator/pkg/render"
 )
 
@@ -43,115 +39,27 @@ type AddressPoolReconciler struct {
 	Namespace string
 }
 
-const RetryPeriod = 5 * time.Minute
-
-var AddressPoolManifestPath = "./bindata/configuration/address-pool"
+const (
+	RetryPeriod = 1 * time.Minute
+)
 
 // +kubebuilder:rbac:groups=metallb.io,resources=addresspools,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=metallb.io,resources=addresspools/status,verbs=get;update;patch
 
 func (r *AddressPoolReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	r.Log.Info(fmt.Sprintf("Starting AddressPool reconcile loop for %v", req.NamespacedName))
-
-	instance := &metallbv1alpha1.AddressPool{}
 	defer r.Log.Info(fmt.Sprintf("Finish AddressPool reconcile loop for %v", req.NamespacedName))
 
-	if err := r.Get(ctx, req.NamespacedName, instance); err != nil {
-		if errors.IsNotFound(err) {
-			err = r.syncMetalLBAddressPools(req)
-			if err != nil {
-				return ctrl.Result{}, err
-			}
-		}
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+	err := reconcileConfigMap(ctx, r.Client, r.Log, r.Namespace)
+	if errors.As(err, &render.RenderingFailed{}) {
+		r.Log.Error(err, "configmap rendering failed", "controller", "addresspool")
+		return ctrl.Result{}, nil
 	}
-	err := r.syncMetalLBAddressPool(instance)
 	if err != nil {
-		r.Log.Info(fmt.Sprintf("sync MetalLB addresspool failed %s", err))
+		r.Log.Error(err, "failed to reconcile configmap", "controller", "addresspool")
 		return ctrl.Result{RequeueAfter: RetryPeriod}, err
 	}
-
 	return ctrl.Result{}, nil
-}
-
-func (r *AddressPoolReconciler) renderObject(instance *metallbv1alpha1.AddressPool) ([]*unstructured.Unstructured, error) {
-	data := render.MakeRenderData()
-	data.Data["Name"] = instance.Name
-	data.Data["Protocol"] = instance.Spec.Protocol
-	data.Data["AutoAssign"] = *instance.Spec.AutoAssign
-	data.Data["Addresses"] = instance.Spec.Addresses
-	data.Data["NameSpace"] = r.Namespace
-	objs, err := render.RenderDir(AddressPoolManifestPath, &data)
-	if err != nil {
-		return nil, fmt.Errorf("Fail to render address-pool manifest err %v", err)
-	}
-
-	if len(objs) > 1 {
-		return nil, fmt.Errorf("Fail to render we are expecting only one object and get %d", len(objs))
-	}
-
-	return objs, err
-}
-
-func (r *AddressPoolReconciler) syncMetalLBAddressPool(instance *metallbv1alpha1.AddressPool) error {
-	objs, err := r.renderObject(instance)
-
-	if err != nil {
-		return fmt.Errorf("Fail to render address-pool manifest %v", err)
-	}
-
-	for _, obj := range objs {
-		if err := apply.ApplyObject(context.Background(), r.Client, obj); err != nil {
-			return fmt.Errorf("could not apply (%s) %s/%s err %v", obj.GroupVersionKind(),
-				obj.GetNamespace(), obj.GetName(), err)
-		}
-	}
-
-	return err
-}
-
-func (r *AddressPoolReconciler) syncMetalLBAddressPools(req ctrl.Request) error {
-	instanceList := &metallbv1alpha1.AddressPoolList{}
-	objs := make([]*unstructured.Unstructured, 0)
-
-	configMap := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "config",
-			Namespace: req.Namespace,
-		},
-	}
-
-	// Delete the exiting configMap
-	if err := r.Delete(context.Background(), configMap); err != nil {
-		// if we don't have ConfigMap then there is nothing to do
-		if errors.IsNotFound(err) {
-			return nil
-		}
-		r.Log.Info(fmt.Sprintf("Failed to delete existing Configmap %s", err))
-		return err
-	}
-
-	if err := r.List(context.Background(), instanceList); err != nil {
-		r.Log.Info(fmt.Sprintf("Failed to get existing addresspool objects %s", err))
-		return err
-	}
-
-	for _, instance := range instanceList.Items {
-		objslist, err := r.renderObject(&instance)
-		if err != nil {
-			return fmt.Errorf("Failed to render address-pool manifest %v", err)
-		}
-
-		objs = append(objs, objslist...)
-	}
-
-	if len(objs) > 0 {
-		if err := apply.ApplyObjects(context.Background(), r.Client, objs); err != nil {
-			return fmt.Errorf("Failed to ApplyObjects %v", err)
-		}
-	}
-
-	return nil
 }
 
 func (r *AddressPoolReconciler) SetupWithManager(mgr ctrl.Manager) error {

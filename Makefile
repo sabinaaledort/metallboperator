@@ -1,14 +1,18 @@
 SHELL := /bin/bash
 
 # Current Operator version
-VERSION ?= 0.1.0
+VERSION ?= latest
+CSV_VERSION = $(shell echo $(VERSION) | sed 's/v//')
+ifeq ($(VERSION), latest)
+CSV_VERSION := 0.0.0
+endif
 # Default image repo
 REPO ?= quay.io/metallb
 
 # Image URL to use all building/pushing image targets
-IMG ?= $(REPO)/metallb-operator:latest
+IMG ?= $(REPO)/metallb-operator:$(VERSION)
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
-CRD_OPTIONS ?= "crd:trivialVersions=true,crdVersions=v1"
+CRD_OPTIONS ?= "crd:crdVersions=v1"
 # Which dir to use in deploy kustomize build
 KUSTOMIZE_DEPLOY_DIR ?= config/default
 
@@ -37,10 +41,15 @@ GOBIN=$(shell go env GOBIN)
 endif
 
 OPERATOR_SDK_VERSION=v1.8.1
+OLM_VERSION=v0.18.3
+CERT_MANAGER_VERSION=v1.5.4
 
 OPM_TOOL_URL=https://api.github.com/repos/operator-framework/operator-registry/releases
 
 TESTS_REPORTS_PATH ?= /tmp/test_e2e_logs/
+VALIDATION_TESTS_REPORTS_PATH ?= /tmp/test_validation_logs/
+
+ENABLE_OPERATOR_WEBHOOK ?= true
 
 ENVTEST_ASSETS_DIR=$(shell pwd)/testbin
 test: generate fmt vet manifests ## Run unit and integration tests
@@ -50,10 +59,17 @@ test: generate fmt vet manifests ## Run unit and integration tests
 
 all: manager ## Default make target if no options specified
 
-test-e2e: generate fmt vet manifests  ## Run e2e tests
+test-validation: generate fmt vet manifests  ## Run validation tests
+	rm -rf ${VALIDATION_TESTS_REPORTS_PATH}
+	mkdir -p ${VALIDATION_TESTS_REPORTS_PATH}
+	USE_LOCAL_RESOURCES=true go test --tags=validationtests -v ./test/e2e/validation -ginkgo.v -junit $(VALIDATION_TESTS_REPORTS_PATH) -report $(VALIDATION_TESTS_REPORTS_PATH)
+
+test-functional: generate fmt vet manifests  ## Run e2e tests
 	rm -rf ${TESTS_REPORTS_PATH}
 	mkdir -p ${TESTS_REPORTS_PATH}
-	go test --tags=e2etests -v ./test/e2e -ginkgo.v -junit $(TESTS_REPORTS_PATH) -report $(TESTS_REPORTS_PATH)
+	USE_LOCAL_RESOURCES=true go test --tags=e2etests -v ./test/e2e/functional -ginkgo.v -junit $(TESTS_REPORTS_PATH) -report $(TESTS_REPORTS_PATH)
+
+test-e2e: generate fmt vet manifests test-validation test-functional  ## Run e2e tests
 
 manager: generate fmt vet  ## Build manager binary
 	go build -ldflags "-X main.build=$$(git rev-parse HEAD)" -o bin/manager main.go
@@ -67,16 +83,28 @@ install: manifests kustomize  ## Install CRDs into a cluster
 uninstall: manifests kustomize  ## Uninstall CRDs from a cluster
 	$(KUSTOMIZE) build config/crd | kubectl delete -f -
 
-deploy: manifests kustomize  ## Deploy controller in the configured cluster
-	cd config/manager && kustomize edit set image controller=${IMG}
+configure-operator-webhook:
+	ENABLE_OPERATOR_WEBHOOK=$(ENABLE_OPERATOR_WEBHOOK) hack/configure_operator_webhook.sh
+
+deploy-cert-manager:
+	set -e ;\
+	kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/$(CERT_MANAGER_VERSION)/cert-manager.yaml ;\
+	hack/wait_for_cert_manager.sh ;\
+
+deploy: manifests kustomize configure-operator-webhook ## Deploy controller in the configured cluster
+	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
+	cd $(KUSTOMIZE_DEPLOY_DIR) && $(KUSTOMIZE) edit set namespace $(NAMESPACE)
+	cd config/metallb_rbac && $(KUSTOMIZE) edit set namespace $(NAMESPACE)
 	$(KUSTOMIZE) build $(KUSTOMIZE_DEPLOY_DIR) | kubectl apply -f -
 	$(KUSTOMIZE) build config/metallb_rbac | kubectl apply -f -
 
-manifests: controller-gen  ## Generate manifests e.g. CRD, RBAC etc.
+manifests: controller-gen generate-metallb-manifests  ## Generate manifests e.g. CRD, RBAC etc.
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 
-fmt:  ## Run go fmt against code
-	[ -z "`gofmt -s -w -l -e .`" ]
+fmt: ## Go fmt your code
+	hack/gofmt.sh
+
+fmt-code: ## Run go fmt against code.
 	go fmt ./...
 
 vet:  ## Run go vet against code
@@ -92,24 +120,26 @@ docker-build:  ## Build the docker image
 docker-push:  ## Push the docker image
 	docker push ${IMG}
 
-bundle: operator-sdk manifests ## Generate bundle manifests and metadata, then validate generated files.
+bundle: operator-sdk manifests configure-operator-webhook ## Generate bundle manifests and metadata, then validate generated files.
 	$(OPERATOR_SDK) generate kustomize manifests --interactive=false -q
 	cd config/manager && $(KUSTOMIZE) edit set image controller=$(IMG)
-	$(KUSTOMIZE) build config/manifests | $(OPERATOR_SDK) generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS) --extra-service-accounts "controller,speaker"
+	$(KUSTOMIZE) build config/manifests | $(OPERATOR_SDK) generate bundle -q --overwrite --version $(CSV_VERSION) $(BUNDLE_METADATA_OPTS) --extra-service-accounts "controller,speaker"
 	$(OPERATOR_SDK) bundle validate ./bundle
+
+bundle-release: bundle bump_versions ## Generate the bundle manifests for a PR
 
 build-bundle: ## Build the bundle image.
 	docker build -f bundle.Dockerfile -t $(BUNDLE_IMG) .
 
-deploy-olm: operator-sdk
-	operator-sdk olm install
+deploy-olm: operator-sdk ## deploys OLM on the cluster
+	operator-sdk olm install --version $(OLM_VERSION)
 	operator-sdk olm status
 
-deploy-with-olm:
-	sed -i 's#quay.io/metallb/metallb-operator-bundle-index:latest#$(BUNDLE_INDEX_IMG)#g' config/olm-install/install-resources.yaml
+deploy-with-olm: ## deploys the operator with OLM instead of manifests
+	sed -i 's#quay.io/metallb/metallb-operator-bundle-index:$(VERSION)#$(BUNDLE_INDEX_IMG)#g' config/olm-install/install-resources.yaml
 	sed -i 's#mymetallb#$(NAMESPACE)#g' config/olm-install/install-resources.yaml
 	$(KUSTOMIZE) build config/olm-install | kubectl apply -f -
-	VERSION=$(VERSION) NAMESPACE=$(NAMESPACE) hack/wait-for-csv.sh
+	VERSION=$(CSV_VERSION) NAMESPACE=$(NAMESPACE) hack/wait-for-csv.sh
 
 bundle-index-build: opm  ## Build the bundle index image.
 	$(OPM) index add --bundles $(BUNDLE_IMG) --tag $(BUNDLE_INDEX_IMG) -c docker
@@ -130,7 +160,7 @@ ifeq (, $(shell which controller-gen))
 	CONTROLLER_GEN_TMP_DIR=$$(mktemp -d) ;\
 	cd $$CONTROLLER_GEN_TMP_DIR ;\
 	go mod init tmp ;\
-	go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.3.0 ;\
+	go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.7.0 ;\
 	rm -rf $$CONTROLLER_GEN_TMP_DIR ;\
 	}
 CONTROLLER_GEN=$(GOBIN)/controller-gen
@@ -193,6 +223,18 @@ validate-metallb-manifests:  ## Validate MetalLB manifests
 lint: ## Run golangci-lint against code
 	@echo "Running golangci-lint"
 	hack/lint.sh
+
+fetch_metallb_version: ## Updates the versions of metallb under hack/metallb_version with the latest available tag
+	@echo "Bumping metallb to latest"
+	hack/fetch_latest_metallb.sh
+
+bump_versions: ## Updates the versions of the metallb-operator / metallb image with the content of hack/operator_version / metallb_version
+	@echo "Updating the operator version"
+	hack/bump_versions.sh
+
+check_generated: ## Checks if there are any different with the current checkout
+	@echo "Checking generated files"
+	hack/verify_generated.sh
 
 help:  ## Show this help
 	@grep -F -h "##" $(MAKEFILE_LIST) | grep -F -v grep | sed -e 's/\\$$//' \
