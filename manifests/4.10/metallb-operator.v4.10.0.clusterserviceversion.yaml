@@ -52,7 +52,7 @@ metadata:
           "kind": "AddressPool",
           "metadata": {
             "name": "addresspool-sample4",
-            "namespace": "metallb-system"
+            "namespace": "openshift-metallb-system"
           },
           "spec": {
             "addresses": [
@@ -82,7 +82,7 @@ metadata:
           "kind": "BGPPeer",
           "metadata": {
             "name": "peer-sample1",
-            "namespace": "metallb-system"
+            "namespace": "openshift-metallb-system"
           },
           "spec": {
             "holdTime": 10,
