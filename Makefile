@@ -86,7 +86,7 @@ uninstall: manifests kustomize  ## Uninstall CRDs from a cluster
 configure-operator-webhook:
 	ENABLE_OPERATOR_WEBHOOK=$(ENABLE_OPERATOR_WEBHOOK) hack/configure_operator_webhook.sh
 
-deploy-cert-manager:
+deploy-cert-manager: ## Deploys cert-manager. Fetching from https://github.com/jetstack/cert-manager
 	set -e ;\
 	kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/$(CERT_MANAGER_VERSION)/cert-manager.yaml ;\
 	hack/wait_for_cert_manager.sh ;\
@@ -175,7 +175,7 @@ ifeq (, $(shell which kustomize))
 	KUSTOMIZE_GEN_TMP_DIR=$$(mktemp -d) ;\
 	cd $$KUSTOMIZE_GEN_TMP_DIR ;\
 	go mod init tmp ;\
-	go get sigs.k8s.io/kustomize/kustomize/v3@v3.5.4 ;\
+	go get sigs.k8s.io/kustomize/kustomize/v4@v4.4.0 ;\
 	rm -rf $$KUSTOMIZE_GEN_TMP_DIR ;\
 	}
 KUSTOMIZE=$(GOBIN)/kustomize

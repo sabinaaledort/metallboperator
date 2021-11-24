@@ -97,13 +97,14 @@ func main() {
 		os.Exit(1)
 	}
 
+	bgpType := os.Getenv("METALLB_BGP_TYPE")
 	if err = (&controllers.MetalLBReconciler{
 		Client:       mgr.GetClient(),
 		Log:          ctrl.Log.WithName("controllers").WithName("MetalLB"),
 		Scheme:       mgr.GetScheme(),
 		PlatformInfo: platformInfo,
 		Namespace:    watchNamepace,
-	}).SetupWithManager(mgr); err != nil {
+	}).SetupWithManager(mgr, bgpType); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "MetalLB")
 		os.Exit(1)
 	}
@@ -135,6 +136,15 @@ func main() {
 			setupLog.Error(err, "unable to create webhook", "webhook", "BGPPeer")
 			os.Exit(1)
 		}
+	}
+	if err = (&controllers.BFDProfileReconciler{
+		Client:    mgr.GetClient(),
+		Log:       ctrl.Log.WithName("controllers").WithName("BFDProfile"),
+		Scheme:    mgr.GetScheme(),
+		Namespace: watchNamepace,
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "BFDProfile")
+		os.Exit(1)
 	}
 	// +kubebuilder:scaffold:builder
 

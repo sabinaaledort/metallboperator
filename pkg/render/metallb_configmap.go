@@ -4,6 +4,7 @@ import (
 	"gopkg.in/yaml.v2"
 
 	metallbv1alpha1 "github.com/metallb/metallb-operator/api/v1alpha1"
+	metallbv1beta1 "github.com/metallb/metallb-operator/api/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -21,6 +22,7 @@ type OperatorConfig struct {
 	DataField     string
 	Pools         []metallbv1alpha1.AddressPool
 	Peers         []metallbv1alpha1.BGPPeer
+	BFDProfiles   []metallbv1beta1.BFDProfile
 }
 
 // Proto holds the protocol we are speaking.
@@ -58,6 +60,10 @@ func metalLBConfig(data *OperatorConfig) (string, error) {
 	for i, p := range data.Peers {
 		res.Peers[i] = peerToMetalLB(p)
 	}
+	res.BFDProfiles = make([]bfdProfile, len(data.BFDProfiles))
+	for i, b := range data.BFDProfiles {
+		res.BFDProfiles[i] = bfdProfileToMetalLB(b)
+	}
 	b, err := yaml.Marshal(&res)
 	if err != nil {
 		return "", err
@@ -79,8 +85,11 @@ func poolToMetalLB(p metallbv1alpha1.AddressPool) addressPool {
 	}
 	res.BGPAdvertisements = make([]bgpAdvertisement, len(p.Spec.BGPAdvertisements))
 	for i, b := range p.Spec.BGPAdvertisements {
-		if b.AggregationLength > 0 {
-			res.BGPAdvertisements[i].AggregationLength = &b.AggregationLength
+		if b.AggregationLength != nil && *b.AggregationLength > 0 {
+			res.BGPAdvertisements[i].AggregationLength = b.AggregationLength
+		}
+		if b.AggregationLengthV6 != nil && *b.AggregationLengthV6 > 0 {
+			res.BGPAdvertisements[i].AggregationLengthV6 = b.AggregationLengthV6
 		}
 		if b.LocalPref > 0 {
 			res.BGPAdvertisements[i].LocalPref = &b.LocalPref
@@ -106,6 +115,7 @@ func peerToMetalLB(p metallbv1alpha1.BGPPeer) peer {
 	}
 	res.RouterID = p.Spec.RouterID
 	res.Password = p.Spec.Password
+	res.BFDProfile = p.Spec.BFDProfile
 	res.NodeSelectors = make([]nodeSelector, len(p.Spec.NodeSelectors))
 	for i, s := range p.Spec.NodeSelectors {
 		res.NodeSelectors[i].MatchLabels = make(map[string]string)
@@ -123,5 +133,18 @@ func peerToMetalLB(p metallbv1alpha1.BGPPeer) peer {
 			}
 		}
 	}
+	return res
+}
+
+func bfdProfileToMetalLB(b metallbv1beta1.BFDProfile) bfdProfile {
+	res := bfdProfile{}
+	res.Name = b.Name
+	res.ReceiveInterval = b.Spec.ReceiveInterval
+	res.TransmitInterval = b.Spec.TransmitInterval
+	res.DetectMultiplier = b.Spec.DetectMultiplier
+	res.EchoInterval = b.Spec.EchoInterval
+	res.EchoMode = b.Spec.EchoMode
+	res.PassiveMode = b.Spec.PassiveMode
+	res.MinimumTTL = b.Spec.MinimumTTL
 	return res
 }

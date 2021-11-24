@@ -24,8 +24,9 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
-
+	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	kscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -41,6 +42,12 @@ import (
 const (
 	defaultMetalLBCrName          = "metallb"
 	MetalLBManifestPathController = "./bindata/deployment"
+	MetalLBSpeakerDaemonSet       = "speaker"
+)
+
+const (
+	bgpNative string = "native"
+	bgpFrr    string = "frr"
 )
 
 // MetalLBReconciler reconciles a MetalLB object
@@ -119,7 +126,15 @@ func (r *MetalLBReconciler) reconcileResource(ctx context.Context, req ctrl.Requ
 	return ctrl.Result{}, status.ConditionAvailable, nil
 }
 
-func (r *MetalLBReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *MetalLBReconciler) SetupWithManager(mgr ctrl.Manager, bgpType string) error {
+	if bgpType == "" {
+		bgpType = bgpNative
+	}
+	if bgpType != bgpNative && bgpType != bgpFrr {
+		return fmt.Errorf("unsupported BGP implementation type: %s", bgpType)
+	}
+	ManifestPath = fmt.Sprintf("%s/%s", ManifestPath, bgpType)
+
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&metallbv1beta1.MetalLB{}).
 		Complete(r)
@@ -132,6 +147,7 @@ func (r *MetalLBReconciler) syncMetalLBResources(config *metallbv1beta1.MetalLB)
 
 	data.Data["SpeakerImage"] = os.Getenv("SPEAKER_IMAGE")
 	data.Data["ControllerImage"] = os.Getenv("CONTROLLER_IMAGE")
+	data.Data["FRRImage"] = os.Getenv("FRR_IMAGE")
 	data.Data["IsOpenShift"] = r.PlatformInfo.IsOpenShift()
 	data.Data["NameSpace"] = r.Namespace
 	objs, err := render.RenderDir(ManifestPath, &data)
@@ -144,6 +160,22 @@ func (r *MetalLBReconciler) syncMetalLBResources(config *metallbv1beta1.MetalLB)
 		if err := controllerutil.SetControllerReference(config, obj, r.Scheme); err != nil {
 			return errors.Wrapf(err, "Failed to set controller reference to %s %s", obj.GetNamespace(), obj.GetName())
 		}
+		if obj.GetKind() == "DaemonSet" && len(config.Spec.SpeakerNodeSelector) > 0 {
+			scheme := kscheme.Scheme
+			ds := &appsv1.DaemonSet{}
+			err = scheme.Convert(obj, ds, nil)
+			if err != nil {
+				logger.Error(err, "Fail to convert MetalLB object to DaemonSet")
+				return err
+			}
+			ds.Spec.Template.Spec.NodeSelector = config.Spec.SpeakerNodeSelector
+			err = scheme.Convert(ds, obj, nil)
+			if err != nil {
+				logger.Error(err, "Fail to convert DaemonSet to MetalLB object")
+				return err
+			}
+		}
+
 		if err := apply.ApplyObject(context.TODO(), r.Client, obj); err != nil {
 			return errors.Wrapf(err, "could not apply (%s) %s/%s", obj.GroupVersionKind(), obj.GetNamespace(), obj.GetName())
 		}

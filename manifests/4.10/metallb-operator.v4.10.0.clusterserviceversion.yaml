@@ -52,7 +52,7 @@ metadata:
           "kind": "AddressPool",
           "metadata": {
             "name": "addresspool-sample4",
-            "namespace": "metallb-system"
+            "namespace": "openshift-metallb-system"
           },
           "spec": {
             "addresses": [
@@ -68,6 +68,7 @@ metadata:
               },
               {
                 "aggregationLength": 24,
+                "aggregationLengthV6": 120,
                 "communities": [
                   "8000:800"
                 ]
@@ -80,8 +81,26 @@ metadata:
           "apiVersion": "metallb.io/v1alpha1",
           "kind": "BGPPeer",
           "metadata": {
+            "name": "peer-bfd",
+            "namespace": "openshift-metallb-system"
+          },
+          "spec": {
+            "bfdProfile": "bfdprofilefull",
+            "holdTime": 10,
+            "myASN": 64500,
+            "peerASN": 64501,
+            "peerAddress": "10.0.0.2",
+            "peerPort": 1,
+            "routerID": "10.10.10.10",
+            "sourceAddress": "1.1.1.1"
+          }
+        },
+        {
+          "apiVersion": "metallb.io/v1alpha1",
+          "kind": "BGPPeer",
+          "metadata": {
             "name": "peer-sample1",
-            "namespace": "metallb-system"
+            "namespace": "openshift-metallb-system"
           },
           "spec": {
             "holdTime": 10,
@@ -114,6 +133,11 @@ metadata:
           "metadata": {
             "name": "metallb",
             "namespace": "openshift-metallb-system"
+        },
+          "spec": {
+            "nodeSelector": {
+              "feature.node.kubernetes.io/metalLB.capable": "true"
+            }
           }
         }
       ]
@@ -141,6 +165,9 @@ spec:
       kind: AddressPool
       name: addresspools.metallb.io
       version: v1alpha1
+    - kind: BFDProfile
+      name: bfdprofiles.metallb.io
+      version: v1beta1
     - kind: BGPPeer
       name: bgppeers.metallb.io
       version: v1alpha1
@@ -212,7 +239,27 @@ spec:
         - apiGroups:
           - metallb.io
           resources:
-            - bgppeers
+          - bfdprofiles
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - metallb.io
+          resources:
+          - bfdprofiles/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - metallb.io
+          resources:
+          - bgppeers
           verbs:
             - create
             - delete
@@ -331,6 +378,10 @@ spec:
                   value: quay.io/openshift/origin-metallb:4.10
                 - name: ENABLE_OPERATOR_WEBHOOK
                   value: "true"
+                - name: METALLB_BGP_TYPE
+                  value: frr
+                - name: FRR_IMAGE
+                  value: frrouting/frr:v7.5.1
                 - name: WATCH_NAMESPACE
                   valueFrom:
                     fieldRef:
