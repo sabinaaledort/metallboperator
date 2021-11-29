@@ -11,3 +11,7 @@ spec:
     from:
       kind: DockerImage
       name: quay.io/openshift/origin-metallb:4.10
+  - name: ose-frr
+    from:
+      kind: DockerImage
+      name: quay.io/frrouting/frr:stable_7.5
