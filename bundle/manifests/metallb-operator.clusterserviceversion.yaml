@@ -376,7 +376,7 @@ spec:
                       - name: ENABLE_OPERATOR_WEBHOOK
                         value: "true"
                       - name: METALLB_BGP_TYPE
-                        value: native
+                        value: frr
                       - name: FRR_IMAGE
                         value: frrouting/frr:v7.5.1
                       - name: WATCH_NAMESPACE
