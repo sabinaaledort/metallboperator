@@ -5,7 +5,7 @@ metadata:
     alm-examples: |-
       [
         {
-          "apiVersion": "metallb.io/v1alpha1",
+          "apiVersion": "metallb.io/v1beta1",
           "kind": "AddressPool",
           "metadata": {
             "name": "addresspool-sample1",
@@ -19,7 +19,7 @@ metadata:
           }
         },
         {
-          "apiVersion": "metallb.io/v1alpha1",
+          "apiVersion": "metallb.io/v1beta1",
           "kind": "AddressPool",
           "metadata": {
             "name": "addresspool-sample2",
@@ -34,7 +34,7 @@ metadata:
           }
         },
         {
-          "apiVersion": "metallb.io/v1alpha1",
+          "apiVersion": "metallb.io/v1beta1",
           "kind": "AddressPool",
           "metadata": {
             "name": "addresspool-sample3",
@@ -48,7 +48,7 @@ metadata:
           }
         },
         {
-          "apiVersion": "metallb.io/v1alpha1",
+          "apiVersion": "metallb.io/v1beta1",
           "kind": "AddressPool",
           "metadata": {
             "name": "addresspool-sample4",
@@ -78,7 +78,43 @@ metadata:
           }
         },
         {
-          "apiVersion": "metallb.io/v1alpha1",
+          "apiVersion": "metallb.io/v1beta1",
+          "kind": "BFDProfile",
+          "metadata": {
+            "name": "bfdprofiledefault",
+            "namespace": "openshift-metallb-system"
+          },
+          "spec": {
+            "detectMultiplier": 37,
+            "echoMode": true,
+            "echoReceiveInterval": 38,
+            "echoTransmitInterval": 39,
+            "minimumTtl": 10,
+            "passiveMode": true,
+            "receiveInterval": 35,
+            "transmitInterval": 35
+          }
+        },
+        {
+          "apiVersion": "metallb.io/v1beta1",
+          "kind": "BFDProfile",
+          "metadata": {
+            "name": "bfdprofilefull",
+            "namespace": "openshift-metallb-system"
+          },
+          "spec": {
+            "detectMultiplier": 37,
+            "echoMode": true,
+            "echoReceiveInterval": 38,
+            "echoTransmitInterval": 39,
+            "minimumTtl": 10,
+            "passiveMode": true,
+            "receiveInterval": 35,
+            "transmitInterval": 35
+          }
+        },
+        {
+          "apiVersion": "metallb.io/v1beta1",
           "kind": "BGPPeer",
           "metadata": {
             "name": "peer-bfd",
@@ -96,7 +132,7 @@ metadata:
           }
         },
         {
-          "apiVersion": "metallb.io/v1alpha1",
+          "apiVersion": "metallb.io/v1beta1",
           "kind": "BGPPeer",
           "metadata": {
             "name": "peer-sample1",
@@ -104,6 +140,7 @@ metadata:
           },
           "spec": {
             "holdTime": 10,
+            "keepaliveTime": 3,
             "myASN": 64500,
             "nodeSelectors": [
               {
@@ -133,7 +170,7 @@ metadata:
           "metadata": {
             "name": "metallb",
             "namespace": "openshift-metallb-system"
-        },
+          },
           "spec": {
             "nodeSelector": {
               "feature.node.kubernetes.io/metalLB.capable": "true"
@@ -160,17 +197,20 @@ spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
+    - kind: AddressPool
+      name: addresspools.metallb.io
+      version: v1alpha1
     - description: AddressPool is the Schema for the addresspools API
       displayName: Address Pool
       kind: AddressPool
       name: addresspools.metallb.io
-      version: v1alpha1
+      version: v1beta1
     - kind: BFDProfile
       name: bfdprofiles.metallb.io
       version: v1beta1
     - kind: BGPPeer
       name: bgppeers.metallb.io
-      version: v1alpha1
+      version: v1beta1
     - description: MetalLB is the Schema for the metallbs API
       displayName: MetalLB
       kind: MetalLB
@@ -222,11 +262,8 @@ spec:
           - addresspools
           verbs:
           - create
-          - delete
           - get
           - list
-          - patch
-          - update
           - watch
         - apiGroups:
           - metallb.io
@@ -242,11 +279,8 @@ spec:
           - bfdprofiles
           verbs:
           - create
-          - delete
           - get
           - list
-          - patch
-          - update
           - watch
         - apiGroups:
           - metallb.io
@@ -261,12 +295,8 @@ spec:
           resources:
           - bgppeers
           verbs:
-            - create
-            - delete
             - get
             - list
-            - patch
-            - update
             - watch
         - apiGroups:
             - metallb.io
@@ -545,7 +575,7 @@ spec:
         - apiGroups:
             - metallb.io
           apiVersions:
-            - v1alpha1
+            - v1beta1
           operations:
             - CREATE
             - UPDATE
@@ -554,7 +584,7 @@ spec:
       sideEffects: None
       targetPort: 9443
       type: ValidatingAdmissionWebhook
-      webhookPath: /validate-metallb-io-v1alpha1-addresspool
+      webhookPath: /validate-metallb-io-v1beta1-addresspool
     - admissionReviewVersions:
         - v1
       containerPort: 443
@@ -565,7 +595,7 @@ spec:
         - apiGroups:
             - metallb.io
           apiVersions:
-            - v1alpha1
+            - v1beta1
           operations:
             - CREATE
             - UPDATE
@@ -574,4 +604,4 @@ spec:
       sideEffects: None
       targetPort: 9443
       type: ValidatingAdmissionWebhook
-      webhookPath: /validate-metallb-io-v1alpha1-bgppeer
+      webhookPath: /validate-metallb-io-v1beta1-bgppeer
