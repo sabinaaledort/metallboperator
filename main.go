@@ -73,7 +73,7 @@ func main() {
 
 	setupLog.Info("git commit:", "id", build)
 
-	watchNamepace := checkEnvVar("WATCH_NAMESPACE")
+	watchNamespace := checkEnvVar("WATCH_NAMESPACE")
 	checkEnvVar("SPEAKER_IMAGE")
 	checkEnvVar("CONTROLLER_IMAGE")
 
@@ -83,7 +83,7 @@ func main() {
 		Port:               9443,
 		LeaderElection:     enableLeaderElection,
 		LeaderElectionID:   "metallb.io.metallboperator",
-		Namespace:          watchNamepace,
+		Namespace:          watchNamespace,
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
@@ -103,48 +103,31 @@ func main() {
 		Log:          ctrl.Log.WithName("controllers").WithName("MetalLB"),
 		Scheme:       mgr.GetScheme(),
 		PlatformInfo: platformInfo,
-		Namespace:    watchNamepace,
+		Namespace:    watchNamespace,
 	}).SetupWithManager(mgr, bgpType); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "MetalLB")
 		os.Exit(1)
 	}
-	if err = (&controllers.AddressPoolReconciler{
+
+	if err = (&controllers.ConfigMapReconciler{
 		Client:    mgr.GetClient(),
-		Log:       ctrl.Log.WithName("controllers").WithName("AddressPool"),
+		Log:       ctrl.Log.WithName("controllers").WithName("ConfigMap"),
 		Scheme:    mgr.GetScheme(),
-		Namespace: watchNamepace,
+		Namespace: watchNamespace,
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "AddressPool")
-		os.Exit(1)
-	}
-	if err = (&controllers.BGPPeerReconciler{
-		Client:    mgr.GetClient(),
-		Log:       ctrl.Log.WithName("controllers").WithName("Peer"),
-		Scheme:    mgr.GetScheme(),
-		Namespace: watchNamepace,
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "BGPPeer")
+		setupLog.Error(err, "unable to create controller", "controller", "ConfigMap")
 		os.Exit(1)
 	}
 
 	if os.Getenv("ENABLE_OPERATOR_WEBHOOK") == "true" {
-		if err = (&metallbv1alpha1.AddressPool{}).SetupWebhookWithManager(mgr); err != nil {
+		if err = (&metallbv1beta1.AddressPool{}).SetupWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "AddressPool")
 			os.Exit(1)
 		}
-		if err = (&metallbv1alpha1.BGPPeer{}).SetupWebhookWithManager(mgr); err != nil {
+		if err = (&metallbv1beta1.BGPPeer{}).SetupWebhookWithManager(mgr, bgpType); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "BGPPeer")
 			os.Exit(1)
 		}
-	}
-	if err = (&controllers.BFDProfileReconciler{
-		Client:    mgr.GetClient(),
-		Log:       ctrl.Log.WithName("controllers").WithName("BFDProfile"),
-		Scheme:    mgr.GetScheme(),
-		Namespace: watchNamepace,
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "BFDProfile")
-		os.Exit(1)
 	}
 	// +kubebuilder:scaffold:builder
 

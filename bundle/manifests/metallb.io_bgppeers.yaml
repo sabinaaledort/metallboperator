@@ -14,7 +14,7 @@ spec:
     singular: bgppeer
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - name: v1beta1
     schema:
       openAPIV3Schema:
         description: BGPPeer is the Schema for the peers API
@@ -38,6 +38,10 @@ spec:
                 type: string
               holdTime:
                 description: Requested BGP hold time, per RFC4271.
+                format: int64
+                type: integer
+              keepaliveTime:
+                description: Requested BGP keepalive time, per RFC4271.
                 format: int64
                 type: integer
               myASN:

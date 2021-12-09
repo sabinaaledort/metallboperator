@@ -3,7 +3,6 @@ package render
 import (
 	"gopkg.in/yaml.v2"
 
-	metallbv1alpha1 "github.com/metallb/metallb-operator/api/v1alpha1"
 	metallbv1beta1 "github.com/metallb/metallb-operator/api/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -20,8 +19,8 @@ type OperatorConfig struct {
 	NameSpace     string
 	ConfigMapName string
 	DataField     string
-	Pools         []metallbv1alpha1.AddressPool
-	Peers         []metallbv1alpha1.BGPPeer
+	Pools         []metallbv1beta1.AddressPool
+	Peers         []metallbv1beta1.BGPPeer
 	BFDProfiles   []metallbv1beta1.BFDProfile
 }
 
@@ -71,7 +70,7 @@ func metalLBConfig(data *OperatorConfig) (string, error) {
 	return string(b), nil
 }
 
-func poolToMetalLB(p metallbv1alpha1.AddressPool) addressPool {
+func poolToMetalLB(p metallbv1beta1.AddressPool) addressPool {
 	res := addressPool{}
 	res.Protocol = Proto(p.Spec.Protocol)
 	res.Name = p.Name
@@ -103,7 +102,7 @@ func poolToMetalLB(p metallbv1alpha1.AddressPool) addressPool {
 	return res
 }
 
-func peerToMetalLB(p metallbv1alpha1.BGPPeer) peer {
+func peerToMetalLB(p metallbv1beta1.BGPPeer) peer {
 	res := peer{}
 	res.MyASN = p.Spec.MyASN
 	res.ASN = p.Spec.ASN
@@ -112,6 +111,9 @@ func peerToMetalLB(p metallbv1alpha1.BGPPeer) peer {
 	res.Port = p.Spec.Port
 	if p.Spec.HoldTime > 0 {
 		res.HoldTime = p.Spec.HoldTime.String()
+	}
+	if p.Spec.KeepaliveTime > 0 {
+		res.KeepaliveTime = p.Spec.KeepaliveTime.String()
 	}
 	res.RouterID = p.Spec.RouterID
 	res.Password = p.Spec.Password

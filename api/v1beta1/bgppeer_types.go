@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha1
+package v1beta1
 
 import (
 	"time"
@@ -65,6 +65,10 @@ type BGPPeerSpec struct {
 	// Requested BGP hold time, per RFC4271.
 	// +optional
 	HoldTime time.Duration `json:"holdTime,omitempty" yaml:"hold-time,omitempty"`
+
+	// Requested BGP keepalive time, per RFC4271.
+	// +optional
+	KeepaliveTime time.Duration `json:"keepaliveTime,omitempty" yaml:"keepalive-time,omitempty"`
 
 	// BGP router ID to advertise to the peer
 	// +optional

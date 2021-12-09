@@ -10,7 +10,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	metallbv1alpha1 "github.com/metallb/metallb-operator/api/v1alpha1"
 	metallbv1beta1 "github.com/metallb/metallb-operator/api/v1beta1"
 	"github.com/metallb/metallb-operator/pkg/render"
 	corev1 "k8s.io/api/core/v1"
@@ -49,13 +48,13 @@ func reconcileConfigMap(ctx context.Context, c client.Client, log logr.Logger, n
 }
 
 func operatorConfig(ctx context.Context, c client.Client) (*render.OperatorConfig, error) {
-	addressPools := &metallbv1alpha1.AddressPoolList{}
+	addressPools := &metallbv1beta1.AddressPoolList{}
 	err := c.List(ctx, addressPools, &client.ListOptions{})
 	if err != nil && !k8serrors.IsNotFound(err) {
 		return nil, errors.Wrap(err, "failed to fetch address pools")
 	}
 
-	bgpPeers := &metallbv1alpha1.BGPPeerList{}
+	bgpPeers := &metallbv1beta1.BGPPeerList{}
 	err = c.List(ctx, bgpPeers, &client.ListOptions{})
 	if err != nil && !k8serrors.IsNotFound(err) {
 		return nil, errors.Wrap(err, "failed to fetch bgp peers")

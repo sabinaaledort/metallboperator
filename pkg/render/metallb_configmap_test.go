@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	metallbv1alpha1 "github.com/metallb/metallb-operator/api/v1alpha1"
 	metallbv1beta1 "github.com/metallb/metallb-operator/api/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
@@ -21,13 +20,13 @@ func TestRendering(t *testing.T) {
 		"poolRendering": {
 			ConfigMapName: "config",
 			NameSpace:     "namespace",
-			Pools: []metallbv1alpha1.AddressPool{
+			Pools: []metallbv1beta1.AddressPool{
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test-addresspool1",
 						Namespace: "namespace",
 					},
-					Spec: metallbv1alpha1.AddressPoolSpec{
+					Spec: metallbv1beta1.AddressPoolSpec{
 						Protocol: "layer2",
 						Addresses: []string{
 							"1.1.1.1-1.1.1.100",
@@ -40,7 +39,7 @@ func TestRendering(t *testing.T) {
 						Name:      "test-addresspool2",
 						Namespace: "namespace",
 					},
-					Spec: metallbv1alpha1.AddressPoolSpec{
+					Spec: metallbv1beta1.AddressPoolSpec{
 						Protocol: "layer2",
 						Addresses: []string{
 							"2.2.2.2-2.2.2.100",
@@ -52,7 +51,7 @@ func TestRendering(t *testing.T) {
 						Name:      "test-addresspool3",
 						Namespace: "namespace",
 					},
-					Spec: metallbv1alpha1.AddressPoolSpec{
+					Spec: metallbv1beta1.AddressPoolSpec{
 						Protocol: "layer2",
 						Addresses: []string{
 							"2.2.2.2-2.2.2.100",
@@ -62,24 +61,24 @@ func TestRendering(t *testing.T) {
 					},
 				},
 			},
-			Peers: []metallbv1alpha1.BGPPeer{},
+			Peers: []metallbv1beta1.BGPPeer{},
 		},
 		"communitiesRendering": {
 			ConfigMapName: "config",
 			NameSpace:     "namespace",
-			Pools: []metallbv1alpha1.AddressPool{
+			Pools: []metallbv1beta1.AddressPool{
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test-addresspool1",
 						Namespace: "namespace",
 					},
-					Spec: metallbv1alpha1.AddressPoolSpec{
+					Spec: metallbv1beta1.AddressPoolSpec{
 						Protocol: "bgp",
 						Addresses: []string{
 							"1.1.1.1-1.1.1.100",
 						},
 						AutoAssign: pointer.BoolPtr(false),
-						BGPAdvertisements: []metallbv1alpha1.BgpAdvertisement{
+						BGPAdvertisements: []metallbv1beta1.BgpAdvertisement{
 							{
 								AggregationLength:   pointer.Int32Ptr(57),
 								AggregationLengthV6: pointer.Int32Ptr(64),
@@ -105,7 +104,7 @@ func TestRendering(t *testing.T) {
 						Name:      "test-addresspool2",
 						Namespace: "namespace",
 					},
-					Spec: metallbv1alpha1.AddressPoolSpec{
+					Spec: metallbv1beta1.AddressPoolSpec{
 						Protocol: "bgp",
 						Addresses: []string{
 							"2.2.2.2-2.2.2.100",
@@ -114,18 +113,18 @@ func TestRendering(t *testing.T) {
 					},
 				},
 			},
-			Peers: []metallbv1alpha1.BGPPeer{},
+			Peers: []metallbv1beta1.BGPPeer{},
 		},
 		"peersRendering": {
 			ConfigMapName: "config",
 			NameSpace:     "namespace",
-			Pools: []metallbv1alpha1.AddressPool{
+			Pools: []metallbv1beta1.AddressPool{
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test-addresspool1",
 						Namespace: "namespace",
 					},
-					Spec: metallbv1alpha1.AddressPoolSpec{
+					Spec: metallbv1beta1.AddressPoolSpec{
 						Protocol: "bgp",
 						Addresses: []string{
 							"1.1.1.1-1.1.1.100",
@@ -133,26 +132,27 @@ func TestRendering(t *testing.T) {
 					},
 				},
 			},
-			Peers: []metallbv1alpha1.BGPPeer{
+			Peers: []metallbv1beta1.BGPPeer{
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test-peer1",
 						Namespace: "namespace",
 					},
-					Spec: metallbv1alpha1.BGPPeerSpec{
-						MyASN:      23,
-						ASN:        24,
-						Address:    "192.168.1.1",
-						SrcAddress: "192.168.1.2",
-						Port:       1234,
-						HoldTime:   time.Second,
-						RouterID:   "abcd",
-						NodeSelectors: []metallbv1alpha1.NodeSelector{
+					Spec: metallbv1beta1.BGPPeerSpec{
+						MyASN:         23,
+						ASN:           24,
+						Address:       "192.168.1.1",
+						SrcAddress:    "192.168.1.2",
+						Port:          1234,
+						HoldTime:      time.Second,
+						KeepaliveTime: time.Second,
+						RouterID:      "abcd",
+						NodeSelectors: []metallbv1beta1.NodeSelector{
 							{
 								MatchLabels: map[string]string{
 									"foo": "bar",
 								},
-								MatchExpressions: []metallbv1alpha1.MatchExpression{
+								MatchExpressions: []metallbv1beta1.MatchExpression{
 
 									{
 
@@ -174,7 +174,7 @@ func TestRendering(t *testing.T) {
 						Name:      "test-peer2",
 						Namespace: "namespace",
 					},
-					Spec: metallbv1alpha1.BGPPeerSpec{
+					Spec: metallbv1beta1.BGPPeerSpec{
 						MyASN:      25,
 						ASN:        26,
 						Address:    "192.168.2.1",
@@ -189,13 +189,13 @@ func TestRendering(t *testing.T) {
 		"peersBfd": {
 			ConfigMapName: "config",
 			NameSpace:     "namespace",
-			Pools: []metallbv1alpha1.AddressPool{
+			Pools: []metallbv1beta1.AddressPool{
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test-addresspool1",
 						Namespace: "namespace",
 					},
-					Spec: metallbv1alpha1.AddressPoolSpec{
+					Spec: metallbv1beta1.AddressPoolSpec{
 						Protocol: "bgp",
 						Addresses: []string{
 							"1.1.1.1-1.1.1.100",
@@ -203,13 +203,13 @@ func TestRendering(t *testing.T) {
 					},
 				},
 			},
-			Peers: []metallbv1alpha1.BGPPeer{
+			Peers: []metallbv1beta1.BGPPeer{
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test-peer1",
 						Namespace: "namespace",
 					},
-					Spec: metallbv1alpha1.BGPPeerSpec{
+					Spec: metallbv1beta1.BGPPeerSpec{
 						MyASN:      23,
 						ASN:        24,
 						Address:    "192.168.1.1",
@@ -217,12 +217,12 @@ func TestRendering(t *testing.T) {
 						Port:       1234,
 						HoldTime:   time.Second,
 						RouterID:   "abcd",
-						NodeSelectors: []metallbv1alpha1.NodeSelector{
+						NodeSelectors: []metallbv1beta1.NodeSelector{
 							{
 								MatchLabels: map[string]string{
 									"foo": "bar",
 								},
-								MatchExpressions: []metallbv1alpha1.MatchExpression{
+								MatchExpressions: []metallbv1beta1.MatchExpression{
 
 									{
 

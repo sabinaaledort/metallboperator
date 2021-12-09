@@ -1,10 +1,12 @@
-package v1alpha1
+package v1beta1
 
 import (
 	"fmt"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"strings"
 	"testing"
+	"time"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestValidateBGPPeer(t *testing.T) {
@@ -75,10 +77,78 @@ func TestValidateBGPPeer(t *testing.T) {
 			},
 			expectedError: "Duplicate BGPPeer",
 		},
+		{
+			desc: "Invalid BGP Peer source address",
+			bgpPeer: &BGPPeer{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-bgppeer",
+					Namespace: MetalLBTestNameSpace,
+				},
+				Spec: BGPPeerSpec{
+					Address:    "10.0.1.1",
+					SrcAddress: "10:",
+					ASN:        64501,
+					MyASN:      64500,
+					RouterID:   "10.10.10.10",
+				},
+			},
+			expectedError: "Invalid BGPPeer source address",
+		},
+		{
+			desc: "Different myASN configuration",
+			bgpPeer: &BGPPeer{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-bgppeer",
+					Namespace: MetalLBTestNameSpace,
+				},
+				Spec: BGPPeerSpec{
+					Address:  "10.0.1.1",
+					ASN:      64501,
+					MyASN:    64400,
+					RouterID: "10.10.10.10",
+				},
+			},
+			expectedError: "Multiple local ASN not supported in FRR mode",
+		},
+		{
+			desc: "Invalid keepalive time configuration",
+			bgpPeer: &BGPPeer{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-bgppeer",
+					Namespace: MetalLBTestNameSpace,
+				},
+				Spec: BGPPeerSpec{
+					Address:       "10.0.0.2",
+					ASN:           64502,
+					MyASN:         64500,
+					HoldTime:      90 * time.Second,
+					KeepaliveTime: 180 * time.Second,
+					RouterID:      "10.10.10.10",
+				},
+			},
+			expectedError: "Invalid keepalive time",
+		},
+		{
+			desc: "Missing holdtime time configuration",
+			bgpPeer: &BGPPeer{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-bgppeer",
+					Namespace: MetalLBTestNameSpace,
+				},
+				Spec: BGPPeerSpec{
+					Address:       "10.0.0.2",
+					ASN:           64502,
+					MyASN:         64500,
+					KeepaliveTime: 180 * time.Second,
+					RouterID:      "10.10.10.10",
+				},
+			},
+			expectedError: "Missing to configure HoldTime",
+		},
 	}
 
 	for _, test := range tests {
-		err := test.bgpPeer.validateBGPPeer(bgpPeerList)
+		err := test.bgpPeer.validateBGPPeer(bgpPeerList, true)
 		if err == nil {
 			t.Errorf("%s: ValidateBGPPeer failed, no error found while expected: \"%s\"", test.desc, test.expectedError)
 		} else {

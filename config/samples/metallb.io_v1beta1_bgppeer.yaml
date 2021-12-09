@@ -1,4 +1,4 @@
-apiVersion: metallb.io/v1alpha1
+apiVersion: metallb.io/v1beta1
 kind: BGPPeer
 metadata:
   name: peer-sample1
@@ -10,6 +10,7 @@ spec:
   routerID: 10.10.10.10
   peerPort: 1
   holdTime: 10
+  keepaliveTime: 3
   sourceAddress: 1.1.1.1
   password: test
   nodeSelectors:
@@ -18,7 +19,7 @@ spec:
       operator: In
       values: [hostA, hostB]
 ---
-apiVersion: metallb.io/v1alpha1
+apiVersion: metallb.io/v1beta1
 kind: BGPPeer
 metadata:
   name: peer-bfd
