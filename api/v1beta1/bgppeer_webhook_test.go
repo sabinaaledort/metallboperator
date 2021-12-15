@@ -65,7 +65,7 @@ func TestValidateBGPPeer(t *testing.T) {
 			desc: "Duplicate BGP Peer",
 			bgpPeer: &BGPPeer{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-bgppeer",
+					Name:      "test-bgppeer1",
 					Namespace: MetalLBTestNameSpace,
 				},
 				Spec: BGPPeerSpec{
@@ -98,7 +98,7 @@ func TestValidateBGPPeer(t *testing.T) {
 			desc: "Different myASN configuration",
 			bgpPeer: &BGPPeer{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-bgppeer",
+					Name:      "test-bgppeer1",
 					Namespace: MetalLBTestNameSpace,
 				},
 				Spec: BGPPeerSpec{
@@ -121,8 +121,8 @@ func TestValidateBGPPeer(t *testing.T) {
 					Address:       "10.0.0.2",
 					ASN:           64502,
 					MyASN:         64500,
-					HoldTime:      90 * time.Second,
-					KeepaliveTime: 180 * time.Second,
+					HoldTime:      metav1.Duration{Duration: 90 * time.Second},
+					KeepaliveTime: metav1.Duration{Duration: 180 * time.Second},
 					RouterID:      "10.10.10.10",
 				},
 			},
@@ -139,7 +139,7 @@ func TestValidateBGPPeer(t *testing.T) {
 					Address:       "10.0.0.2",
 					ASN:           64502,
 					MyASN:         64500,
-					KeepaliveTime: 180 * time.Second,
+					KeepaliveTime: metav1.Duration{Duration: 180 * time.Second},
 					RouterID:      "10.10.10.10",
 				},
 			},

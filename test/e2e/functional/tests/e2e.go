@@ -7,11 +7,10 @@ import (
 	"strings"
 	"time"
 
-	"k8s.io/utils/pointer"
-
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
+	"k8s.io/utils/pointer"
 
 	metallbv1alpha1 "github.com/metallb/metallb-operator/api/v1alpha1"
 	metallbv1beta1 "github.com/metallb/metallb-operator/api/v1beta1"
@@ -89,7 +88,7 @@ var _ = Describe("metallb", func() {
 				}, metallbutils.DeployTimeout, metallbutils.Interval).Should(BeTrue())
 
 				pods, err := testclient.Client.Pods(OperatorNameSpace).List(context.Background(), metav1.ListOptions{
-					LabelSelector: "component=controller"})
+					LabelSelector: "app.kubernetes.io/component=controller"})
 				Expect(err).ToNot(HaveOccurred())
 
 				deploy, err := testclient.Client.Deployments(metallb.Namespace).Get(context.Background(), consts.MetalLBDeploymentName, metav1.GetOptions{})
@@ -111,7 +110,7 @@ var _ = Describe("metallb", func() {
 				}, metallbutils.DeployTimeout, metallbutils.Interval).Should(BeTrue())
 
 				pods, err := testclient.Client.Pods(OperatorNameSpace).List(context.Background(), metav1.ListOptions{
-					LabelSelector: "component=speaker"})
+					LabelSelector: "app.kubernetes.io/component=speaker"})
 				Expect(err).ToNot(HaveOccurred())
 
 				daemonset, err := testclient.Client.DaemonSets(metallb.Namespace).Get(context.Background(), consts.MetalLBDaemonsetName, metav1.GetOptions{})
@@ -984,8 +983,8 @@ var _ = Describe("metallb", func() {
 					Address:       "1.1.1.1",
 					ASN:           64500,
 					MyASN:         1000,
-					KeepaliveTime: 180 * time.Second,
-					HoldTime:      90 * time.Second,
+					KeepaliveTime: metav1.Duration{Duration: 180 * time.Second},
+					HoldTime:      metav1.Duration{Duration: 90 * time.Second},
 				},
 			}
 			err := testclient.Client.Create(context.Background(), peer)
@@ -994,7 +993,7 @@ var _ = Describe("metallb", func() {
 			}
 
 			By("Updating BGPPeer resource to use valid keepalive time")
-			peer.Spec.KeepaliveTime = 90 * time.Second
+			peer.Spec.KeepaliveTime = metav1.Duration{Duration: 90 * time.Second}
 			err = testclient.Client.Create(context.Background(), peer)
 			Expect(err).ToNot(HaveOccurred())
 
