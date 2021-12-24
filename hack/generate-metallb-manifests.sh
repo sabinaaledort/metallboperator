@@ -1,7 +1,7 @@
 #!/bin/bash
 . $(dirname "$0")/common.sh
 
-METALLB_COMMIT_ID="06da676fa192967190839464c58e62cae175105e"
+METALLB_COMMIT_ID="a4b2482c334678ae79d79b5f5b3196ad760b48ac"
 METALLB_SC_FILE=$(dirname "$0")/securityContext.yaml
 
 NATIVE_MANIFESTS_FILE="metallb.yaml"
@@ -11,6 +11,10 @@ NATIVE_MANIFESTS_DIR="bindata/deployment/native"
 FRR_MANIFESTS_FILE="metallb-frr.yaml"
 FRR_MANIFESTS_URL="https://raw.githubusercontent.com/metallb/metallb/${METALLB_COMMIT_ID}/manifests/${FRR_MANIFESTS_FILE}"
 FRR_MANIFESTS_DIR="bindata/deployment/frr"
+
+PROMETHEUS_OPERATOR_FILE="prometheus-operator.yaml"
+PROMETHEUS_OPERATOR_MANIFESTS_URL="https://raw.githubusercontent.com/metallb/metallb/${METALLB_COMMIT_ID}/manifests/${PROMETHEUS_OPERATOR_FILE}"
+PROMETHEUS_OPERATOR_MANIFESTS_DIR="bindata/deployment/prometheus-operator"
 
 if ! command -v yq &> /dev/null
 then
@@ -65,4 +69,13 @@ yq e --inplace '. | select(.metadata.namespace == "metallb-system").metadata.nam
 yq e --inplace '. | select(.kind == "Deployment" and .metadata.name == "controller" and .spec.template.spec.containers[0].name == "controller").spec.template.spec.securityContext|="'"$(< ${METALLB_SC_FILE})"'"' ${FRR_MANIFESTS_DIR}/${FRR_MANIFESTS_FILE}
 sed -i 's/securityContext\: |-/securityContext\:/g' ${FRR_MANIFESTS_DIR}/${FRR_MANIFESTS_FILE} # Last because it breaks yaml syntax
 
+# Update MetalLB's E2E lane to clone the same commit as the manifests.
+yq e --inplace ".jobs.main.steps[] |= select(.name==\"Checkout MetalLB\").with.ref=\"${METALLB_COMMIT_ID}\"" .github/workflows/metallb_e2e.yml
+
 # TODO: run this script once FRR is merged
+
+# Prometheus Operator manifests
+curl ${PROMETHEUS_OPERATOR_MANIFESTS_URL} -o _cache/${PROMETHEUS_OPERATOR_FILE}
+yq e '. | select((.kind == "Role" or .kind == "ClusterRole" or .kind == "RoleBinding" or .kind == "ClusterRoleBinding" or .kind == "ServiceAccount") | not)' _cache/${PROMETHEUS_OPERATOR_FILE} > ${PROMETHEUS_OPERATOR_MANIFESTS_DIR}/${PROMETHEUS_OPERATOR_FILE}
+yq e --inplace '. | select(.kind == "PodMonitor").metadata.namespace|="{{.NameSpace}}"' ${PROMETHEUS_OPERATOR_MANIFESTS_DIR}/${PROMETHEUS_OPERATOR_FILE}
+yq e --inplace '. | select(.kind == "PodMonitor").spec.namespaceSelector.matchNames|=["{{.NameSpace}}"]' ${PROMETHEUS_OPERATOR_MANIFESTS_DIR}/${PROMETHEUS_OPERATOR_FILE}
