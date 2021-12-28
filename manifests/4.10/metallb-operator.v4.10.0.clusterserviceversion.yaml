@@ -254,6 +254,18 @@ spec:
           - podsecuritypolicies
           verbs:
           - use
+        - apiGroups:
+          - authentication.k8s.io
+          resources:
+          - tokenreviews
+          verbs:
+          - create
+        - apiGroups:
+          - authorization.k8s.io
+          resources:
+          - subjectaccessreviews
+          verbs:
+          - create
         serviceAccountName: controller
       - rules:
         - apiGroups:
@@ -390,6 +402,18 @@ spec:
           - podsecuritypolicies
           verbs:
           - use
+        - apiGroups:
+          - authentication.k8s.io
+          resources:
+          - tokenreviews
+          verbs:
+          - create
+        - apiGroups:
+          - authorization.k8s.io
+          resources:
+          - subjectaccessreviews
+          verbs:
+          - create
         serviceAccountName: speaker
       deployments:
       - name: metallb-operator-controller-manager
@@ -420,6 +444,12 @@ spec:
                   value: frr
                 - name: FRR_IMAGE
                   value: quay.io/openshift/origin-metallb-frr:4.10
+                - name: KUBE_RBAC_PROXY_IMAGE
+                  value: "quay.io/openshift/origin-kube-rbac-proxy:4.10"
+                - name: DEPLOY_KUBE_RBAC_PROXIES
+                  value: "true"
+                - name: DEPLOY_PODMONITORS
+                  value: "false"
                 - name: WATCH_NAMESPACE
                   valueFrom:
                     fieldRef:
@@ -526,6 +556,7 @@ spec:
           - monitoring.coreos.com
           resources:
           - podmonitors
+          - servicemonitors
           verbs:
           - create
           - delete
@@ -533,7 +564,19 @@ spec:
           - list
           - patch
           - update
-          - watch 
+          - watch
+        - apiGroups:
+          - ""
+          resources:
+          - services
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
         serviceAccountName: default
       - rules:
         - apiGroups:
