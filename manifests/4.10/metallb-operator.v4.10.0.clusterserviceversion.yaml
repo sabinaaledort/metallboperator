@@ -171,11 +171,6 @@ metadata:
             "name": "metallb",
             "namespace": "openshift-metallb-system"
           },
-          "spec": {
-            "nodeSelector": {
-              "feature.node.kubernetes.io/metalLB.capable": "true"
-            }
-          }
         }
       ]
     capabilities: Basic Install
