@@ -15,3 +15,7 @@ spec:
     from:
       kind: DockerImage
       name: quay.io/openshift/origin-metallb-frr:4.10
+  - name: kube-rbac-proxy
+    from:
+      kind: DockerImage
+      name: quay.io/openshift/origin-kube-rbac-proxy:4.10            
