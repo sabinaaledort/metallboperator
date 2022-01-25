@@ -25,7 +25,7 @@ spec:
         serverName: "metallb-speaker-monitor-service.{{.NameSpace}}.svc"
         certFile: /etc/prometheus/secrets/metrics-client-certs/tls.crt
         keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
-  jobLabel: "app.kubernetes.io/component"
+  jobLabel: "component"
   namespaceSelector:
     matchNames:
       - '{{.NameSpace}}'
@@ -45,7 +45,7 @@ metadata:
   namespace: '{{.NameSpace}}'
 spec:
   selector:
-    app.kubernetes.io/component: speaker
+    component: speaker
   clusterIP: None
   ports:
     - name: speaker-metrics
@@ -75,7 +75,7 @@ spec:
         serverName: "metallb-controller-monitor-service.{{.NameSpace}}.svc"
         certFile: /etc/prometheus/secrets/metrics-client-certs/tls.crt
         keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
-  jobLabel: "app.kubernetes.io/component"
+  jobLabel: "component"
   namespaceSelector:
     matchNames:
       - '{{.NameSpace}}'
@@ -95,7 +95,7 @@ metadata:
   namespace: '{{.NameSpace}}'
 spec:
   selector:
-    app.kubernetes.io/component: controller
+    component: controller
   clusterIP: None
   ports:
     - name: controller-metrics
