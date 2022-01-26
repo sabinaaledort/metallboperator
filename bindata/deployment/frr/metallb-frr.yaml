@@ -4,7 +4,6 @@ metadata:
   labels:
     app: metallb
   name: controller
-  namespace: '{{.NameSpace}}'
 spec:
   allowPrivilegeEscalation: false
   allowedCapabilities: []
@@ -46,7 +45,6 @@ metadata:
   labels:
     app: metallb
   name: speaker
-  namespace: '{{.NameSpace}}'
 spec:
   allowPrivilegeEscalation: false
   allowedCapabilities:
@@ -185,21 +183,21 @@ kind: DaemonSet
 metadata:
   labels:
     app: metallb
-    app.kubernetes.io/component: speaker
+    component: speaker
   name: speaker
   namespace: '{{.NameSpace}}'
 spec:
   selector:
     matchLabels:
       app: metallb
-      app.kubernetes.io/component: speaker
+      component: speaker
   template:
     metadata:
       annotations:
         prometheus.io/scrape: 'true'
       labels:
         app: metallb
-        app.kubernetes.io/component: speaker
+        component: speaker
     spec:
       volumes:
         - name: frr-sockets
@@ -332,7 +330,7 @@ spec:
             #- name: METALLB_ML_BIND_PORT
             #  value: "7946"
             - name: METALLB_ML_LABELS
-              value: "app=metallb,app.kubernetes.io/component=speaker"
+              value: "app=metallb,component=speaker"
             - name: METALLB_ML_SECRET_KEY
               valueFrom:
                 secretKeyRef:
@@ -446,7 +444,7 @@ kind: Deployment
 metadata:
   labels:
     app: metallb
-    app.kubernetes.io/component: controller
+    component: controller
   name: controller
   namespace: '{{.NameSpace}}'
 spec:
@@ -454,7 +452,7 @@ spec:
   selector:
     matchLabels:
       app: metallb
-      app.kubernetes.io/component: controller
+      component: controller
   template:
     metadata:
       annotations:
@@ -462,7 +460,7 @@ spec:
         prometheus.io/scrape: 'true'
       labels:
         app: metallb
-        app.kubernetes.io/component: controller
+        component: controller
     spec:
       containers:
         - args:
