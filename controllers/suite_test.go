@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
@@ -36,7 +37,6 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	metallbv1alpha1 "github.com/metallb/metallb-operator/api/v1alpha1"
 	metallbv1beta1 "github.com/metallb/metallb-operator/api/v1beta1"
 	// +kubebuilder:scaffold:imports
 )
@@ -81,9 +81,6 @@ var _ = BeforeSuite(func() {
 	Expect(err).ToNot(HaveOccurred())
 	Expect(cfg).ToNot(BeNil())
 
-	err = metallbv1alpha1.AddToScheme(scheme.Scheme)
-	Expect(err).NotTo(HaveOccurred())
-
 	err = metallbv1beta1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
@@ -111,20 +108,13 @@ var _ = BeforeSuite(func() {
 	PodMonitorsPath = fmt.Sprintf("%s/%s", MetalLBManifestPathControllerTest, "prometheus-operator")
 
 	bgpType := os.Getenv("METALLB_BGP_TYPE")
+	webHookEnabled, _ := strconv.ParseBool(os.Getenv("ENABLE_WEBHOOK"))
 	err = (&MetalLBReconciler{
 		Client:    k8sClient,
 		Scheme:    scheme.Scheme,
 		Log:       ctrl.Log.WithName("controllers").WithName("MetalLB"),
 		Namespace: MetalLBTestNameSpace,
-	}).SetupWithManager(k8sManager, bgpType)
-	Expect(err).ToNot(HaveOccurred())
-
-	err = (&ConfigMapReconciler{
-		Client:    k8sClient,
-		Scheme:    scheme.Scheme,
-		Log:       ctrl.Log.WithName("controller").WithName("ConfigMap"),
-		Namespace: MetalLBTestNameSpace,
-	}).SetupWithManager(k8sManager)
+	}).SetupWithManager(k8sManager, bgpType, webHookEnabled)
 	Expect(err).ToNot(HaveOccurred())
 
 	go func() {

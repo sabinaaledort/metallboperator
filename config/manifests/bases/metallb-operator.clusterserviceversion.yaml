@@ -17,11 +17,6 @@ spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
-    - description: AddressPool is the Schema for the addresspools API
-      displayName: Address Pool
-      kind: AddressPool
-      name: addresspools.metallb.io
-      version: v1beta1
     - description: MetalLB is the Schema for the metallbs API
       displayName: MetalLB
       kind: MetalLB
