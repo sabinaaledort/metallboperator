@@ -210,6 +210,9 @@ spec:
       - kind: BGPPeer
         name: bgppeers.metallb.io
         version: v1beta2
+      - kind: Community
+        name: communities.metallb.io
+        version: v1beta1
       - kind: IPAddressPool
         name: ipaddresspools.metallb.io
         version: v1beta1
@@ -494,6 +497,14 @@ spec:
             - list
             - watch
         - apiGroups:
+            - metallb.io
+          resources:
+            - communities
+          verbs:
+            - get
+            - list
+            - watch
+        - apiGroups:
             - authentication.k8s.io
           resources:
             - tokenreviews
@@ -632,6 +643,14 @@ spec:
           - get
           - list
           - watch
+        - apiGroups:
+            - metallb.io
+          resources:
+            - communities
+          verbs:
+            - get
+            - list
+            - watch
         - apiGroups:
           - security.openshift.io
           resourceNames:
