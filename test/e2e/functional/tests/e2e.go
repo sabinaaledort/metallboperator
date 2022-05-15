@@ -78,6 +78,8 @@ var _ = Describe("metallb", func() {
 					return deploy.Status.ReadyReplicas > 0 && deploy.Status.ReadyReplicas == deploy.Status.Replicas
 				}, metallbutils.DeployTimeout, metallbutils.Interval).Should(BeTrue())
 
+				time.Sleep(time.Hour)
+
 				pods, err := testclient.Client.Pods(OperatorNameSpace).List(context.Background(), metav1.ListOptions{
 					LabelSelector: "component=controller"})
 				Expect(err).ToNot(HaveOccurred())
